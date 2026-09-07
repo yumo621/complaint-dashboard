@@ -1476,10 +1476,15 @@ function apRenderHeatmap(cur, prev, subjects) {
   }
   subEl.textContent = `${prev.week} vs ${cur.week} · 红=新增 · 橙=上升≥30% · 绿=下降≥30%`;
 
+  // 列头固定：汇总所有周次、所有学科的累计频率，取 Top 14，不随当前周变化
   const globalFreq = {};
-  for (const subj of subjects) {
-    const wf = apGetWordFreq(cur.week, subj);
-    Object.entries(wf).slice(0, 20).forEach(([w, v]) => { globalFreq[w] = (globalFreq[w]||0) + v; });
+  for (const ver of loadVersions()) {
+    for (const subj of Object.keys(ver.sheets || {})) {
+      const wf = (ver.sheets[subj].kwfreq && Object.keys(ver.sheets[subj].kwfreq).length > 0)
+        ? ver.sheets[subj].kwfreq
+        : (() => { const m={}; Object.entries(ver.sheets[subj].l3||{}).forEach(([w,v])=>m[w]=v); Object.entries(ver.sheets[subj].l2||{}).forEach(([w,v])=>{if(!m[w])m[w]=v;}); return m; })();
+      Object.entries(wf).forEach(([w, v]) => { globalFreq[w] = (globalFreq[w]||0) + v; });
+    }
   }
   const topKw = Object.entries(globalFreq).sort((a,b)=>b[1]-a[1]).slice(0, 14).map(e => e[0]);
 
